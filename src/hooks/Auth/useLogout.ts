@@ -21,5 +21,6 @@ export const useLogout = () => {
     onSuccess: (data) => {
       toast.info(data.data.message)
     },
+    
   })
 }

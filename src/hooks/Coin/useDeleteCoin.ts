@@ -13,8 +13,15 @@ export function useDeleteCoin() {
             queryClient.invalidateQueries({ queryKey: ["coins"] });
         },
 
-        onError: () => {
-            toast.error("حذف انجام نشد.");
-        },
+        onError: (err: any) => {
+            const details = err?.response?.data?.error?.details as Record<string, string[]> | undefined;
+      
+            const message =
+                details && Object.values(details)[0]?.[0]
+                    ? Object.values(details)[0][0]
+                    : err?.response?.data?.error?.message || "خطا در ایجاد محصول"
+      
+            toast.error(message)
+        }
     });
 }

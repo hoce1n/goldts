@@ -10,7 +10,6 @@ import { Loader2 } from 'lucide-react'
 export default function Profile() {
   useMe()
   const { user, hydrated } = useAuthStore();
-  console.log(user);
   
 
   const getVerificationLevelLabel = (level: number | undefined) => {

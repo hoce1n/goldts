@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import * as z from 'zod'
-import { ArrowRightLeft, Loader2 } from 'lucide-react'
+import { ArrowRightLeft, Loader, Loader2 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -15,6 +15,9 @@ import { cn } from '@/lib/utils'
 
 import { Container } from './Container'
 import { useGetLatestMarketPrice } from '@/hooks/Market/useGetLatestMarketPrice'
+import { useCreateQuote } from '@/hooks/Quote/useCreateQuote'
+import { useDebounce } from '@/hooks/useDebounce'
+import { ProductType, QuoteSide } from '@/types/quote.types'
 
 const formSchema = z.object({
   mode: z.enum(['buy', 'sell']),
@@ -35,7 +38,6 @@ function normalizeNumericInput(value: string) {
 
   return normalizedDigits.replace(/[^0-9.]/g, '')
 }
-
 function formatRialInput(value: string) {
   const normalized = normalizeNumericInput(value)
   if (!normalized) return ''
@@ -47,13 +49,21 @@ function formatRialInput(value: string) {
 }
 
 export default function MilliCalculator() {
-    const { data, isLoading, error } = useGetLatestMarketPrice()
-    const pricePerGram = data?.data.pricePerGram ?? 0;
+
+  const { data, isLoading } = useGetLatestMarketPrice()
+  const pricePerGram = data?.data.pricePerGram ?? 0
 
   const pricePerMg = useMemo(() => {
-    if (!pricePerGram) return 0;
-    return pricePerGram / 100;
-  }, [pricePerGram]);
+    if (!pricePerGram) return 0
+    return pricePerGram / 1000;
+  }, [pricePerGram])
+
+  const {
+    mutateAsync: createQuote,
+    data: quote,
+    isPending,
+    error: quoteError,
+  } = useCreateQuote()  
 
   const {
     register,
@@ -75,45 +85,88 @@ export default function MilliCalculator() {
   const valueField = register('value')
 
   const [resultMg, setResultMg] = useState<number | null>(null)
-  const [resultRial, setResultRial] = useState<number | null>(null)
+  const debouncedMg = useDebounce(resultMg, 400)
 
+  const amountInGrams =
+    debouncedMg && debouncedMg > 0
+      ? debouncedMg / 1000
+      : null
+  const [secondsLeft, setSecondsLeft] = useState<number | null>(null)
+
+  // مقدار قابل ارسال به بک‌اند.
   useEffect(() => {
     if (!pricePerMg || !rawValue.trim()) {
       setResultMg(null)
-      setResultRial(null)
       return
     }
 
     const num = Number(normalizeNumericInput(rawValue))
     if (isNaN(num) || num <= 0) {
       setResultMg(null)
-      setResultRial(null)
       return
     }
 
     if (inputType === 'mg') {
-      const rial = Math.round(num * pricePerMg)
-      setResultRial(rial)
       setResultMg(num)
     } else {
-      const maxMg = Math.floor(num / pricePerMg)
-      const actualRial = Math.round(maxMg * pricePerMg)
-
-      setResultMg(maxMg)
-      setResultRial(actualRial)
+      const mg = Math.floor(num / pricePerMg)
+      setResultMg(mg > 0 ? mg : null)
     }
   }, [rawValue, inputType, pricePerMg])
+
+  useEffect(() => {
+    if (!amountInGrams) return
+
+    createQuote({
+      productType: ProductType.MeltedGold,
+      amount: amountInGrams,
+      side: mode === 'buy' ? QuoteSide.Buy : QuoteSide.Sell,
+    })
+  }, [amountInGrams, mode, createQuote])
+
+  // تایمر اعتبار quote
+  useEffect(() => {
+    if (!quote?.data.expiresAtUtc) {
+      setSecondsLeft(null)
+      return
+    }
+
+    const expiry = new Date(quote.data.expiresAtUtc).getTime()
+
+    const update = () => {
+      const diff = Math.floor((expiry - Date.now()) / 1000)
+      setSecondsLeft(diff > 0 ? diff : 0)
+    }
+
+    update()
+    const interval = setInterval(update, 1000)
+
+    return () => clearInterval(interval)
+  }, [quote])
+
+  const resultRial = quote?.data.totalPrice ?? null
+  const unitPrice = quote?.data.unitPrice
+    ? quote.data.unitPrice / 1000
+    : null
 
   const minAllowedMg = mode === 'buy' ? 1 : 2
   const isValid = resultMg !== null && resultMg >= minAllowedMg
 
   const handleSwitchInputType = () => {
     setValue('inputType', inputType === 'rial' ? 'mg' : 'rial')
+    setValue('value', '')
+    setResultMg(null)
+    setSecondsLeft(null)
   }
 
   const handleValueChange = (value: string) => {
-    const nextValue = inputType === 'rial' ? formatRialInput(value) : normalizeNumericInput(value)
-    setValue('value', nextValue, { shouldDirty: true, shouldValidate: true })
+    const nextValue =
+      inputType === 'rial' ? formatRialInput(value) : normalizeNumericInput(value)
+
+    setValue('value', nextValue, {
+      shouldDirty: true,
+      shouldValidate: true,
+    })
   }
 
   const handleValueBlur = (value: string) => {
@@ -125,6 +178,7 @@ export default function MilliCalculator() {
 
     const snappedMg = Math.floor(num / pricePerMg)
     const snappedRial = Math.round(snappedMg * pricePerMg)
+
     if (snappedRial > 0 && num !== snappedRial) {
       setValue('value', formatRialInput(String(snappedRial)), {
         shouldDirty: true,
@@ -142,7 +196,7 @@ export default function MilliCalculator() {
   }
 
   return (
-    <Container className='py-12 lg:py-16 w-full'>
+    <Container className="py-12 lg:py-16 w-full">
       <Card className="border-border/40 shadow-sm">
         <CardHeader className="pb-4">
           <CardTitle className="flex items-center justify-between">
@@ -151,9 +205,9 @@ export default function MilliCalculator() {
               {pricePerMg ? `${pricePerMg.toLocaleString('fa-IR')} ریال / میلی‌گرم` : '—'}
             </span>
           </CardTitle>
+
           <CardDescription>
-            خرید و فروش طلا به صورت میلی‌گرم 
-            با قیمت لحظه‌ای
+            خرید و فروش طلا به صورت میلی‌گرم با قیمت لحظه‌ای
           </CardDescription>
         </CardHeader>
 
@@ -224,13 +278,38 @@ export default function MilliCalculator() {
 
                 <div className="flex justify-between border-t pt-3 text-sm">
                   <span className="font-medium font-doraan">
-                    {resultRial !== null ? resultRial.toLocaleString('fa-IR') : '—'} ریال
+                    {isPending
+                      ? <Loader className='animate-spin' />
+                      : resultRial !== null
+                        ? `${resultRial.toLocaleString('fa-IR')} ریال`
+                        : '—'}
                   </span>
                   <span className="text-muted-foreground">
-                    {mode === 'buy' ? 'مبلغ' : 'مبلغ واریزی'}
+                    {mode === 'buy' ? 'مبلغ نهایی' : 'مبلغ دریافتی'}
+                  </span>
+                </div>
+
+                <div className="flex justify-between border-t pt-3 text-sm">
+                  <span className="font-medium font-doraan">
+                    {unitPrice !== null ? `${unitPrice.toLocaleString('fa-IR')} ریال` : '—'}
+                  </span>
+                  <span className="text-muted-foreground">
+                   قیمت هر میلی‌گرم
                   </span>
                 </div>
               </div>
+
+              {secondsLeft !== null && resultRial !== null && (
+                <div className="text-center rounded-md bg-primary/5 px-3 py-2 text-xs text-muted-foreground">
+                  اعتبار این قیمت: {secondsLeft} ثانیه
+                </div>
+              )}
+
+              {quoteError && (
+                <div className="text-center rounded-md bg-destructive/10 px-3 py-2 text-xs text-destructive">
+                  دریافت قیمت با خطا مواجه شد. دوباره تلاش کنید.
+                </div>
+              )}
 
               {resultMg !== null && resultMg > 0 && resultMg < minAllowedMg && (
                 <div className="text-center rounded-md bg-destructive/10 px-3 py-2 text-xs text-destructive">
@@ -241,9 +320,10 @@ export default function MilliCalculator() {
               <Button
                 className="w-full"
                 size="lg"
-                disabled={!isValid || isLoading}
-                variant={'default'}
+                disabled={!isValid || isPending || !quote?.data?.id || secondsLeft === 0}
+                variant="default"
               >
+                {isPending && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
                 {mode === 'buy' ? 'پرداخت و خرید' : 'تایید و فروش'}
               </Button>
             </div>
