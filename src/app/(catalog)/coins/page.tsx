@@ -1,6 +1,6 @@
 'use client';
 
-import { ActivitySquare, CheckCircle, Edit, Eye, Loader2, Trash, XCircle } from "lucide-react";
+import { CheckCircle, Edit, Eye, Loader2, Trash, XCircle } from "lucide-react";
 import { Button } from "@/components/Button";
 import { Container } from "@/components/Container"
 import { useGetCoins } from "@/hooks/Coin/useGetCoins"
@@ -15,8 +15,6 @@ import { useUpdateCoinMintingFee } from "@/hooks/Coin/useUpdateCoinMintingFee";
 import { useToggleCoinStatus } from "@/hooks/Coin/useCoinStatus";
 import { useDeleteCoin } from "@/hooks/Coin/useDeleteCoin";
 import ConfirmDialog from "@/components/ConfirmDialog";
-import { useMe } from "@/hooks/Auth/useMe";
-import { useAuthStore } from "@/stores/auth.store";
 import { useAuth } from "@/hooks/Auth/useAuth";
   
 export default function Coins() {

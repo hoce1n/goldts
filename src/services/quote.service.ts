@@ -1,6 +1,6 @@
 import { api } from "@/lib/axios";
 import { ApiResponse } from "@/types/api.types";
-import { CreateQuoteRequest, CreateQuoteResponse } from "@/types/quote.types";
+import { ConfirmQuoteResponse, CreateQuoteRequest, CreateQuoteResponse } from "@/types/quote.types";
 
 export const createQuote = async (
     payload: CreateQuoteRequest
@@ -8,6 +8,16 @@ export const createQuote = async (
     const { data } = await api.post(
         "/Quote",
         payload
+    )
+
+    return data;
+}
+
+export const confirmQuote = async (
+    quoteId: string
+): Promise<ApiResponse<ConfirmQuoteResponse>> => {
+    const { data } = await api.post(
+        `Quote/${quoteId}/confirm`
     )
 
     return data;

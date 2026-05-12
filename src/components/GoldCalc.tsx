@@ -18,6 +18,8 @@ import { useGetLatestMarketPrice } from '@/hooks/Market/useGetLatestMarketPrice'
 import { useCreateQuote } from '@/hooks/Quote/useCreateQuote'
 import { useDebounce } from '@/hooks/useDebounce'
 import { ProductType, QuoteSide } from '@/types/quote.types'
+import { useConfirmQuote } from '@/hooks/Quote/useConfirmQuote'
+import { Sheet, SheetContent } from './ui/sheet'
 
 const formSchema = z.object({
   mode: z.enum(['buy', 'sell']),
@@ -38,6 +40,7 @@ function normalizeNumericInput(value: string) {
 
   return normalizedDigits.replace(/[^0-9.]/g, '')
 }
+
 function formatRialInput(value: string) {
   const normalized = normalizeNumericInput(value)
   if (!normalized) return ''
@@ -49,6 +52,10 @@ function formatRialInput(value: string) {
 }
 
 export default function MilliCalculator() {
+  const {
+    mutateAsync: confirmQuote,
+    isPending: isConfirming,
+  } = useConfirmQuote();
 
   const { data, isLoading } = useGetLatestMarketPrice()
   const pricePerGram = data?.data.pricePerGram ?? 0
@@ -85,6 +92,9 @@ export default function MilliCalculator() {
   const valueField = register('value')
 
   const [resultMg, setResultMg] = useState<number | null>(null)
+
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false)
+
   const debouncedMg = useDebounce(resultMg, 400)
 
   const amountInGrams =
@@ -151,6 +161,18 @@ export default function MilliCalculator() {
 
   const minAllowedMg = mode === 'buy' ? 1 : 2
   const isValid = resultMg !== null && resultMg >= minAllowedMg
+
+  const handleConfirm = async () => {
+    if (!quote?.data.id) return;
+    
+    try {
+      const response = await confirmQuote(quote.data.id);
+      setIsPreviewOpen(false);
+      setSecondsLeft(null);
+    } catch (err: any) {
+      console.error(err)
+    }
+  }
 
   const handleSwitchInputType = () => {
     setValue('inputType', inputType === 'rial' ? 'mg' : 'rial')
@@ -320,16 +342,114 @@ export default function MilliCalculator() {
               <Button
                 className="w-full"
                 size="lg"
-                disabled={!isValid || isPending || !quote?.data?.id || secondsLeft === 0}
+                disabled={
+                  !isValid || 
+                  isPending || 
+                  !quote?.data?.id || 
+                  secondsLeft === 0}
                 variant="default"
+                onClick={() => setIsPreviewOpen(true)}
               >
                 {isPending && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
-                {mode === 'buy' ? 'پرداخت و خرید' : 'تایید و فروش'}
+                {mode === 'buy' 
+                ? 'پرداخت و خرید' 
+                : 'تایید و فروش'}
               </Button>
             </div>
           </Tabs>
         </CardContent>
       </Card>
+      <Sheet open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
+        <SheetContent
+          side='right'
+          className="border-0 px-6 py-8"
+        >
+          <div className="mx-auto mb-6 h-1.5 w-14 rounded-full bg-muted" />
+
+          <div className="space-y-6">
+
+            <div className="text-center">
+              <h3 className="text-xl font-bold">
+                {mode === 'buy'
+                  ? 'تایید خرید میلی'
+                  : 'تایید فروش میلی'}
+              </h3>
+
+              <p className="mt-1 text-sm text-muted-foreground">
+                قیمت تا {secondsLeft} ثانیه معتبر است
+              </p>
+            </div>
+
+            <div className="rounded-2xl bg-muted/40 p-5 text-center">
+              <div className="text-sm text-muted-foreground">
+                مقدار طلا
+              </div>
+
+              <div className="mt-2 text-3xl font-extrabold tracking-tight">
+                {resultMg?.toLocaleString('fa-IR')}
+              </div>
+
+              <div className="mt-1 text-sm text-muted-foreground">
+                میلی‌گرم
+              </div>
+            </div>
+
+            <div className="space-y-3 rounded-2xl border p-4">
+
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">
+                  قیمت هر میلی‌گرم
+                </span>
+
+                <span className="font-medium">
+                  {unitPrice?.toLocaleString('fa-IR')} ریال
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">
+                  کارمزد
+                </span>
+
+                <span className="font-medium">
+                  ۰ ریال
+                </span>
+              </div>
+
+              <div className="h-px bg-border" />
+
+              <div className="flex items-center justify-between">
+                <span className="font-medium">
+                  مبلغ نهایی
+                </span>
+
+                <span className="text-lg font-bold">
+                  {resultRial?.toLocaleString('fa-IR')} ریال
+                </span>
+              </div>
+            </div>
+
+            <Button
+              size="lg"
+              className="h-12 w-full rounded-2xl text-base font-bold"
+              disabled={secondsLeft === 0 || isConfirming}
+              onClick={handleConfirm}
+            >
+              {isConfirming && (
+                <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+              )}
+
+              {secondsLeft === 0
+                ? 'قیمت منقضی شده'
+                : mode === 'buy'
+                  ? 'تایید و خرید'
+                  : 'تایید و فروش'}
+            </Button>
+
+          </div>
+        </SheetContent>
+      </Sheet>
+
     </Container>
   )
 }

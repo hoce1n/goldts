@@ -12,6 +12,7 @@ export interface CreateQuoteRequest {
     productType: ProductType;
     amount: number;
     side: QuoteSide;
+    productId?: string;
 }
 
 export interface CreateQuoteResponse {
@@ -19,4 +20,10 @@ export interface CreateQuoteResponse {
     unitPrice: number;
     totalPrice: number;
     expiresAtUtc: string;
+}
+
+export interface ConfirmQuoteResponse {
+    orderId: string;
+    unitPrice: number;
+    totalPrice: number;
 }
