@@ -1,64 +1,96 @@
-// src/components/products/ProductCard.tsx
-"use client";
-
 import { Coin } from "@/types/coin.types";
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Eye } from "lucide-react";
+import Image from "next/image";
+import ProductDetails from "./ProductDetails";
+import { useState } from "react";
+import { useCart } from "@/stores/cart";
 
 interface ProductCardProps {
   coin: Coin;
-  onViewDetails: (coinId: string) => void;
+  onClick: () => void;
 }
 
-export function ProductCard({ coin, onViewDetails }: ProductCardProps) {
-  const isAvailable = coin.stock > 0;
+export function ProductCard({ coin, onClick }: ProductCardProps) {
+
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('fa-IR').format(price);
+  };
+
+  const [selectedCoin, setSelectedCoin] = useState<Coin | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const addItem = useCart((s) => s.addItem);
+  const openCart = useCart((s) => s.openCart);
+
+  const handleAddToCart = () => {
+    addItem({
+      id: coin.id,
+      name: coin.name,
+      price: coin.finalPrice,
+      quantity: 1,
+      image: coin.imageUrl
+    });
+
+    openCart();
+  }
+
+  const handleCardClick = (coin: Coin) => {
+    setSelectedCoin(coin);
+    setModalOpen(true);
+    
+  };
 
   return (
-    <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => onViewDetails(coin.id)}>
-      <CardHeader>
-        <div className="flex justify-between items-start">
-          <h3 className="font-semibold text-lg">{coin.name}</h3>
-          <Badge variant={isAvailable ? "default" : "secondary"}>
-            {isAvailable ? "موجود" : "ناموجود"}
+    <>
+    <div 
+      onClick={() => handleCardClick(coin)}
+      className="group relative cursor-pointer"
+    >
+      <div className="h-96 w-full rounded-lg bg-muted object-cover group-hover:opacity-75 sm:aspect-square sm:h-auto flex items-center justify-center">
+        {coin.imageUrl 
+        ? 
+        <Image
+          src={`/coins/${coin.imageUrl}`}
+          width={400}
+          height={400}
+          loading='eager'
+          alt={coin.name}
+        />
+        : 
+        <div className="text-center">
+          <div className="text-6xl mb-2">💰</div>
+          <p className="text-sm text-muted-foreground">{coin.name}</p>
+        </div>
+        }
+      </div>
+
+      <div className="mt-4">
+        <div className="flex items-start justify-between gap-2">
+          <h3 className="text-base font-semibold text-foreground">
+            <span className="absolute inset-0" />
+            {coin.name}
+          </h3>
+          <Badge variant={coin.stock > 0 ? "default" : "secondary"}>
+            {coin.stock > 0 ? `موجودی: ${coin.stock} عدد` : "ناموجود"}
           </Badge>
         </div>
-      </CardHeader>
-
-      <CardContent className="space-y-2">
-        <div className="flex justify-between text-sm">
-          <span className="text-muted-foreground">وزن:</span>
-          <span className="font-medium">{coin.weightInSoot} گرم</span>
+        
+        <div className="mt-2 space-y-1">
+          <p className="text-sm text-muted-foreground">
+            وزن: {coin.weightInSoot} سوت • عیار: {coin.karat}
+          </p>
+          <p className="text-left text-sm font-medium text-foreground">
+            {formatPrice(coin.finalPrice)} تومان
+          </p>
         </div>
+      </div>
+    </div>
 
-        <div className="flex justify-between text-sm">
-          <span className="text-muted-foreground">عیار:</span>
-          <span className="font-medium">{coin.karat}</span>
-        </div>
-
-        <div className="flex justify-between text-sm">
-          <span className="text-muted-foreground">اجرت:</span>
-          <span className="font-medium">{coin.mintingFee.toLocaleString()} تومان</span>
-        </div>
-
-        <div className="flex justify-between items-center pt-2 border-t">
-          <span className="text-muted-foreground">قیمت نهایی:</span>
-          <span className="font-bold text-lg text-primary">
-            {coin.finalPrice.toLocaleString()} تومان
-          </span>
-        </div>
-      </CardContent>
-
-      <CardFooter>
-        <Button variant="outline" className="w-full" onClick={(e) => {
-          e.stopPropagation();
-          onViewDetails(coin.id);
-        }}>
-          <Eye className="ml-2 h-4 w-4" />
-          مشاهده جزئیات
-        </Button>
-      </CardFooter>
-    </Card>
+    <ProductDetails 
+      coin={selectedCoin}
+      open={modalOpen}
+      onOpenChange={setModalOpen}
+      onAddToCart={handleAddToCart}
+    />
+    </>
   );
 }

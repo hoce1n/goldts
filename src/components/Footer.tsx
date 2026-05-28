@@ -71,9 +71,9 @@ export function Footer() {
               placeholder="آدرس ایمیل"
               autoComplete="email"
               required
-              className="w-60 min-w-0 shrink"
+              className="w-60 min-w-0 shrink rounded-l-none"
             />
-            <Button type="submit" color="cyan" className="ml-4 flex-none">
+            <Button type="submit" color="cyan" className="ml-4 flex-none rounded-l-md">
               <span className="hidden lg:inline">عضویت</span>
               <span className="lg:hidden">عضویت</span>
             </Button>

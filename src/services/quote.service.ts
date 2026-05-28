@@ -16,8 +16,16 @@ export const createQuote = async (
 export const confirmQuote = async (
     quoteId: string
 ): Promise<ApiResponse<ConfirmQuoteResponse>> => {
+    const idempotencyKey = crypto.randomUUID();
+
     const { data } = await api.post(
-        `Quote/${quoteId}/confirm`
+        `Quote/${quoteId}/confirm`,
+        {},
+        {
+            headers: {
+                "Idempotency-Key": idempotencyKey
+            }
+        }
     )
 
     return data;

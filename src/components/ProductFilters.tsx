@@ -1,4 +1,3 @@
-// src/components/products/ProductFilters.tsx
 "use client";
 
 import { Input } from "@/components/ui/input";
@@ -12,7 +11,12 @@ import {
 } from "@/components/ui/select";
 import { Search } from "lucide-react";
 
-export type SortOption = "newest" | "price-asc" | "price-desc" | "weight-asc" | "weight-desc";
+export type SortOption = 
+  "newest" | 
+  "price-asc" | 
+  "price-desc" | 
+  "weight-asc" | 
+  "weight-desc";
 
 interface ProductFiltersProps {
   searchQuery: string;
@@ -45,7 +49,6 @@ export function ProductFilters({
 }: ProductFiltersProps) {
   return (
     <div className="space-y-4 p-4 bg-card rounded-lg border">
-      {/* جستجو */}
       <div className="space-y-2">
         <Label htmlFor="search">جستجو</Label>
         <div className="relative">
@@ -60,7 +63,6 @@ export function ProductFilters({
         </div>
       </div>
 
-      {/* فیلتر وزن */}
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="min-weight">حداقل وزن (گرم)</Label>
@@ -84,7 +86,6 @@ export function ProductFilters({
         </div>
       </div>
 
-      {/* فیلتر قیمت */}
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="min-price">حداقل قیمت (تومان)</Label>
@@ -108,7 +109,6 @@ export function ProductFilters({
         </div>
       </div>
 
-      {/* مرتب‌سازی */}
       <div className="space-y-2">
         <Label htmlFor="sort">مرتب‌سازی</Label>
         <Select value={sortBy} onValueChange={onSortChange}>

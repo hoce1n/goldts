@@ -26,4 +26,6 @@ export interface ConfirmQuoteResponse {
     orderId: string;
     unitPrice: number;
     totalPrice: number;
+    requiresPayment?: boolean;
+    paymentUrl?: string;
 }

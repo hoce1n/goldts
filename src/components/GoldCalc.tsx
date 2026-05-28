@@ -218,6 +218,7 @@ export default function MilliCalculator() {
   }
 
   return (
+    <section id='GoldCalc'>
     <Container className="py-12 lg:py-16 w-full">
       <Card className="border-border/40 shadow-sm">
         <CardHeader className="pb-4">
@@ -451,5 +452,6 @@ export default function MilliCalculator() {
       </Sheet>
 
     </Container>
+    </section>
   )
 }

@@ -5,6 +5,7 @@ import clsx from 'clsx'
 
 import '@/styles/tailwind.css'
 import { QueryProvider } from './providers/queryProvider'
+import AuthProvider from './providers/authProviders';
 
 const doraan = localFont({
   src: [
@@ -187,9 +188,11 @@ export default function RootLayout({
   return (
     <html lang="fa" dir='rtl' className={clsx('bg-gray-50 antialiased', doraan.variable, peydaa.variable)}>
       <body>
+        <AuthProvider>
         <QueryProvider>
           {children}
         </QueryProvider>
+        </AuthProvider>
         <Toaster 
           richColors 
           closeButton

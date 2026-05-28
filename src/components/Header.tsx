@@ -13,10 +13,13 @@ import { Button } from './ui/button'
 import { Container } from '@/components/Container'
 import { Logo } from '@/components/Logo'
 import { NavLinks } from '@/components/NavLinks'
-import { useMe } from '@/hooks/Auth/useMe'
 import { useAuthStore } from '@/stores/auth.store'
 import { ArrowLeft, Bell, ChevronDown, ShoppingBag, User } from 'lucide-react'
 import { useLogout } from '@/hooks/Auth/useLogout'
+import ConfirmDialog from './ConfirmDialog'
+import { useState } from 'react'
+import ShoppingCart from './ShoppingCart'
+import { useCart } from '@/stores/cart'
 
 function MenuIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
   return (
@@ -60,10 +63,15 @@ function MobileNavLink(
 }
 
 export function Header() {
-  useMe()
+  const user = useAuthStore((s) => s.user);
+  const hydrated = useAuthStore((s) => s.hydrated);
+  const { mutate: handleLogout, isPending } = useLogout();
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
 
-  const { user, hydrated } = useAuthStore()
-  const { mutate: handleLogout, isPending } = useLogout()
+  const openCart = useCart((s) => s.openCart);
+  const items = useCart((s) => s.items);
+
+  const count = items.reduce((a, b) => a + b.quantity, 0);
 
   return (
     <header>
@@ -117,7 +125,7 @@ export function Header() {
                           className="absolute inset-x-0 top-0 z-0 origin-top rounded-b-2xl bg-gray-50 px-6 pt-32 pb-6 shadow-2xl shadow-gray-900/20"
                         >
                           <div className="space-y-4">
-                            <MobileNavLink href="/coins">محصولات</MobileNavLink>
+                            <MobileNavLink href="/products">محصولات</MobileNavLink>
                             <MobileNavLink href="/#reviews">
                               تماس با ما
                             </MobileNavLink>
@@ -137,11 +145,11 @@ export function Header() {
                                   <ArrowLeft className="transition-transform group-hover:block group-hover:-translate-x-2" />
                                 </Link>
                                 <Button
-                                  onClick={() => handleLogout()}
+                                  onClick={() => setShowLogoutDialog(true)}
                                   variant="outline"
                                   className="flex gap-x-2 border-red-400 text-red-500 hover:border-red-600"
                                 >
-                                  {isPending ? 'در حال خروج' : 'خروج'}
+                                  خروج
                                 </Button>
                               </>
                             ) : (
@@ -171,12 +179,23 @@ export function Header() {
                 <div className="flex gap-x-6">
                   <Bell />
                   <div className="flex items-center border-l pl-5">
-                    <ChevronDown className="h-4 w-4" />
+                    <ChevronDown 
+                      className="h-4 w-4" 
+                      onClick={() => setShowLogoutDialog(true)}
+                    />
                     <Link href={'/profile'}>
                       <User />
                     </Link>
                   </div>
-                  <ShoppingBag />
+                  <button onClick={openCart} className="relative">
+                    <ShoppingBag className="cursor-pointer" />
+
+                    {count > 0 && (
+                      <span className="absolute -top-2 -right-2 text-xs bg-primary text-white rounded-full px-1.5">
+                        {count}
+                      </span>
+                    )}
+                  </button>
                 </div>
               ) : (
                 <>
@@ -196,6 +215,20 @@ export function Header() {
               )}
             </div>
           </div>
+          <ConfirmDialog
+            open={showLogoutDialog}
+            title="خروج از حساب کاربری"
+            description="آیا می‌خواهید از حساب کاربری خود خارج شوید؟"
+            confirmText="خروج"
+            cancelText="انصراف"
+            loading={isPending}
+            onCancel={() => setShowLogoutDialog(false)}
+            onConfirm={() => {
+              handleLogout()
+              setShowLogoutDialog(false)
+            }}
+          />
+          <ShoppingCart />
         </Container>
       </nav>
     </header>

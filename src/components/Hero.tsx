@@ -12,6 +12,7 @@ import logoFintech from '@/images/fintech.svg'
 import logoOtaghBazargani from '@/images/otagh-bazargani.png'
 import logoNamad from '@/images/namad-7.webp'
 import { Button } from './ui/button'
+import Link from 'next/link'
 
 function BackgroundIllustration(props: React.ComponentPropsWithoutRef<'div'>) {
   let id = useId()
@@ -111,8 +112,13 @@ export function Hero() {
             <div className="mt-8 flex flex-wrap gap-x-6 gap-y-4">
               {/* <AppStoreLink /> */}
               <Button
+                className='relative'
                 variant='outline'
               >
+                <Link
+                  className='absolute inset-0'
+                  href={'/#GoldCalc'}
+                ></Link>
                 <span className="ml-2.5">خرید طلای آبشده</span>
                 <ArrowLeft className="h-6 w-6 flex-none" />
               </Button>

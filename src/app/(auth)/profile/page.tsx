@@ -2,13 +2,11 @@
 
 import { Button } from '@/components/ui/button'
 import { Container } from '@/components/Container'
-import { useMe } from '@/hooks/Auth/useMe'
 import { useAuthStore } from '@/stores/auth.store'
 import { gregorianToJalali } from '@/utils/dateUtils'
 import { Loader2 } from 'lucide-react'
 
 export default function Profile() {
-  useMe()
   const { user, hydrated } = useAuthStore();
   
 

@@ -6,7 +6,6 @@ import { Container } from "@/components/Container"
 import { useGetCoins } from "@/hooks/Coin/useGetCoins"
 import { Plus } from "lucide-react";
 import { useState } from "react";
-import { CoinDetailsModal } from "@/components/CoinDetailsModal";
 import { CoinFormModal } from "@/components/CoinFormModal";
 import { Coin } from "@/types/coin.types";
 import { useUpdateCoinStock } from "@/hooks/Coin/useUpdateCoinStock";
@@ -230,16 +229,6 @@ return (
                               ? <CheckCircle /> 
                               : <XCircle />}
                           </button>
-
-                            {/* {coin.isActive ? (
-                            <span className="inline-flex items-center rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-green-600/20 ring-inset">
-                                فعال
-                            </span>
-                            ) : (
-                            <span className="inline-flex items-center rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-red-700 ring-1 ring-red-600/20 ring-inset">
-                                غیرفعال
-                            </span>
-                            )} */}
                         </td>
                         <td className="px-3 py-5 text-sm whitespace-nowrap text-gray-500">
                             <div className="text-gray-900">
@@ -295,16 +284,10 @@ return (
                       description: selectedCoin.description ?? "",
                       imageUrl: selectedCoin.imageUrl ?? "",
                     }
-                  : undefined
+                    : undefined
               }
             
             onClose={() => setOpenEdit(false)}
-        />
-
-        <CoinDetailsModal
-        open={openDetails}
-        onClose={() => setOpenDetails(false)}
-        coinId={selectedCoinId}
         />
 
         <ConfirmDialog
@@ -327,7 +310,6 @@ type BtnGroupProps = {
     onEdit: () => void
     onDelete: (id: string) => void
 }
-
 function BtnGroup({ id, onView, onEdit, onDelete }: BtnGroupProps) {
     return(
         <span className="isolate inline-flex rounded-md shadow-xs">
